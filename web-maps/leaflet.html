@@ -23,11 +23,18 @@
 </head>
 
 <body>
+    <h1>BGS Sensor Data (beta)</h1>
+    <br>
+    <p>A Leaflet map Based on <a href="https://github.com/DataCoveEU/STAM">DataCove EU STAM project</a> connected to the <a href="https://sensors.bgs.ac.uk/FROST-Server/v1.1">BGS SensorThings API endpoint</a>.</p>
+    <br>
+    <p><a href="https://www.ogc.org/standards/sensorthings">SensorThinngs API</a> is a international standard developed by the OGC using RESTful OData interface. Users can connect to the API using Python, Jupyter Notebooks, QGIS, ESRI and other clients</p>
+    <br>
+
     <div id="map" class="map"></div>
     <script>
         var map2 = L.map('map', {
             preferCanvas: true
-        }).setView([50.27264, 7.26469], 8);
+        }).setView([55.83836, -4.19961], 16);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -42,33 +49,13 @@
             markerStyle: function (feature) {
                 return "yellow";
             },
-            cluster: false,
+            cluster: true,
             // cachingDuration: 10,
             clusterMin: 5,
-            queryObject: [{
+            queryObject: [{        
                     zoomLevel: {
                         from: 0,
-                        to: 7
-                    },
-                    query: {
-                        entityType: 'Things',
-                        filter: "length(Locations/name) eq 2",
-                    }
-                },
-                {
-                    zoomLevel: {
-                        from: 8,
-                        to: 9
-                    },
-                    query: {
-                        entityType: 'Things',
-                        filter: "length(Locations/name) eq 4",
-                    }
-                },
-                {
-                    zoomLevel: {
-                        from: 10,
-                        to: 11
+                        to: 18
                     },
                     query: {
                         entityType: 'Things',
