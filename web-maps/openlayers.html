@@ -33,8 +33,8 @@
             ],
             target: 'mapOl',
             view: new ol.View({
-                center: [808701.59, 6493626.85],
-                zoom: 8,
+                center: [55.83836, -4.19961],
+                zoom: 16,
             }),
         });
         map.addLayer(new ol.layer.STAM({
@@ -53,27 +53,7 @@
             queryObject: [{
                     zoomLevel: {
                         from: 0,
-                        to: 7
-                    },
-                    query: {
-                        entityType: 'Things',
-                        filter: "length(Locations/name) eq 2",
-                    }
-                },
-                {
-                    zoomLevel: {
-                        from: 8,
-                        to: 9
-                    },
-                    query: {
-                        entityType: 'Things',
-                        filter: "length(Locations/name) eq 4",
-                    }
-                },
-                {
-                    zoomLevel: {
-                        from: 10,
-                        to: 11
+                        to: 18
                     },
                     query: {
                         entityType: 'Things',
