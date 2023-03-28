@@ -31,9 +31,12 @@ jobs:
       run: |
         pip install -r requirements_dev.txt    
 
+    - name: Test with doctest
+      run: |
+        python -m doctest README.md   
+        
     - name: Test with pytest
       run: |
-        python -m doctest README.md
-        python -m pytest -v --nbval sensor-things-api-demo.ipynb      
+        python -m pytest -v --nbval sensor-things-api-demo.ipynb        
 
  
