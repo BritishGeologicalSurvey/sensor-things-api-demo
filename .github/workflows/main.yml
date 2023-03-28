@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         
-     - name: Install dependencies for testing
+    - name: Install dependencies for testing
       run: |
         pip install -r requirements_dev.txt    
 
