@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated STA Data</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin="" />
+     <link rel="stylesheet" href="L.Control.ZoomBox.css"/>   
+     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+		integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+		crossorigin=""></script>
+    <style>
+        .map {
+            height: 800px;
+            width: 100%;
+        }
+    </style>
+    <script src="L.Control.ZoomBox.min.js"></script>
+    <script src="https://unpkg.com/sta-map"></script>
+</head>
+
+<body>
+    <h1>Federated STA Data - Leaflet Map Example</h1>
+    <br>
+    <p>A Leaflet map Based on https://github.com/DataCoveEU/STAM connected to a number of SensorThings API endpoints,
+        including (https://sensors-internal.bgs.ac.uk/FROST-Server/v1.1).</p>
+    <br>
+    <p>SensorThings API is a international standard developed by the OGC (https://www.ogc.org/standards/sensorthings)
+        using RESTful OData interface. Users can connect to the API using Python, Jupyter Notebooks, QGIS, ESRI and other
+        clients</p>
+    <br>
+    <div id="map" class="map"></div>
+    <script>
+        var map2 = L.map('map', {
+            preferCanvas: true
+        }).setView([0, 0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map2);
+
+        // Create separate Sta-map layers for each base URL
+        var staMap1 = L.stam({
+            baseUrl: "https://sensors.bgs.ac.uk/FROST-Server/v1.1",
+            markerStyle: function (feature) {
+                return "green";
+            },
+            cluster: false,
+            queryObject: [{
+                zoomLevel: {
+                    from: 0,
+                    to: 18
+                },
+                query: {
+                    entityType: 'Things',
+                    filter: "length(Locations/name) gt 4",
+                }
+            }]
+        });
+
+        var staMap2 = L.stam({
+            baseUrl: "https://linkedsystems.uk/sensorthings/v1.1",
+            markerStyle: function (feature) {
+                return "orange";
+            },
+            cluster: false,
+            queryObject: [{
+                zoomLevel: {
+                    from: 0,
+                    to: 18
+                },
+                query: {
+                    entityType: 'Things',
+                    filter: "length(Locations/name) gt 4",
+                }
+            }]
+        });
+
+        // Add the Sta-map layers to the map
+        map2.addLayer(staMap1);
+        map2.addLayer(staMap2);
+
+        // Using a custom SVG icon as content
+        var control = L.control.zoomBox({ addToZoomControl: true, modal: true });
+        map2.addControl(control); 
+    </script>
+</body>
+
+</html>
