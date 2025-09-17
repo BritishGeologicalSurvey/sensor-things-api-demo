@@ -28,7 +28,9 @@
     <script src="https://unpkg.com/sta-map"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 </head>
 
 <body>
@@ -61,46 +63,152 @@
             defaultMarkGeocode: true
         }).addTo(map2);
 
-        // Create separate Sta-map layers for each base URL
-        var staMap1 = L.stam({
-            baseUrl: "https://sensors.bgs.ac.uk/FROST-Server/v1.1",
-            markerStyle: function (feature) {
-                return "green";
-            },
-            cluster: false,
-            queryObject: [{
-                zoomLevel: {
-                    from: 0,
-                    to: 18
-                },
-                query: {
-                    entityType: 'Things',
-                    filter: "length(Locations/name) gt 4",
-                }
-            }]
+        // // Create separate Sta-map layers for each base URL
+        // var staMap1 = L.stam({
+        //     baseUrl: "https://sensors.bgs.ac.uk/FROST-Server/v1.1",
+        //     markerStyle: function (feature) {
+        //         return "green";
+        //     },
+        //     cluster: false,
+        //     queryObject: [{
+        //         zoomLevel: {
+        //             from: 0,
+        //             to: 18
+        //         },
+        //         query: {
+        //             entityType: 'Things',
+        //             filter: "length(Locations/name) gt 4",
+        //         }
+        //     }]
+        // });
+
+        // var staMap2 = L.stam({
+        //     baseUrl: "https://linkedsystems.uk/sensorthings/v1.1",
+        //     markerStyle: function (feature) {
+        //         return "orange";
+        //     },
+        //     cluster: false,
+        //     queryObject: [{
+        //         zoomLevel: {
+        //             from: 0,
+        //             to: 18
+        //         },
+        //         query: {
+        //             entityType: 'Things',
+        //             filter: "length(Locations/name) gt 4",
+        //         }
+        //     }]
+        // });
+
+        // // Add the Sta-map layers to the map
+        // map2.addLayer(staMap1);
+        // map2.addLayer(staMap2);
+
+        // Create two cluster groups with custom cluster icons
+        var bgsCluster = L.markerClusterGroup({
+            maxClusterRadius: 10,
+            iconCreateFunction: function(cluster) {
+                return L.divIcon({
+                    html: `<div style="background:green;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;">${cluster.getChildCount()}</div>`,
+                    className: 'bgs-cluster-icon',
+                    iconSize: [32, 32]
+                });
+            }
         });
 
-        var staMap2 = L.stam({
-            baseUrl: "https://linkedsystems.uk/sensorthings/v1.1",
-            markerStyle: function (feature) {
-                return "orange";
-            },
-            cluster: false,
-            queryObject: [{
-                zoomLevel: {
-                    from: 0,
-                    to: 18
-                },
-                query: {
-                    entityType: 'Things',
-                    filter: "length(Locations/name) gt 4",
-                }
-            }]
+        var linkedCluster = L.markerClusterGroup({
+            maxClusterRadius: 10,
+            iconCreateFunction: function(cluster) {
+                return L.divIcon({
+                    html: `<div style="background:orange;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;">${cluster.getChildCount()}</div>`,
+                    className: 'linked-cluster-icon',
+                    iconSize: [32, 32]
+                });
+            }
         });
 
-        // Add the Sta-map layers to the map
-        map2.addLayer(staMap1);
-        map2.addLayer(staMap2);
+        function addSensorThingsMarkers(apiUrl, color, clusterGroup) {
+            const url = apiUrl + "/Things?$expand=Locations,Datastreams($expand=ObservedProperty)&$filter=length(Locations/name) gt 4";
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.value) return;
+                    data.value.forEach(thing => {
+                        if (thing.Locations && thing.Locations.length > 0) {
+                            thing.Locations.forEach(loc => {
+                                if (loc.location && loc.location.coordinates) {
+                                    var coords = loc.location.coordinates;
+                                    let popupContent = `<b>${thing.name}</b><br>${loc.name || ""}<br><ul>`;
+                                    if (thing.Datastreams && thing.Datastreams.length > 0) {
+                                        thing.Datastreams.forEach(ds => {
+                                            if (ds.ObservedProperty) {
+                                                popupContent += `<li style="cursor:pointer;color:blue;text-decoration:underline;" onclick="showPlotlyChart('${apiUrl}',${ds['@iot.id']},'${ds.ObservedProperty.name.replace(/'/g,"")}')">${ds.ObservedProperty.name}</li>`;
+                                            }
+                                        });
+                                    }
+                                    popupContent += "</ul>";
+                                    var marker = L.marker([coords[1], coords[0]], {
+                                        icon: color === "green" ? L.icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]}) : 
+                                            L.icon({iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png', shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]})
+                                    }).bindPopup(popupContent);
+                                    clusterGroup.addLayer(marker);
+                                }
+                            });
+                        }
+                    });
+                });
+        }
+
+        // Add markers for both APIs, each to its own cluster group
+        addSensorThingsMarkers("https://sensors.bgs.ac.uk/FROST-Server/v1.1", "green", bgsCluster);
+        addSensorThingsMarkers("https://linkedsystems.uk/sensorthings/v1.1", "orange", linkedCluster);
+
+        // Add both cluster groups to the map
+        map2.addLayer(bgsCluster);
+        map2.addLayer(linkedCluster);
+
+
+        // Add this function to your script for Plotly modal
+        function showPlotlyChart(apiUrl, datastreamId, observedProperty) {
+            // Create modal container if not exists
+            let modal = document.getElementById('plotly-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'plotly-modal';
+                modal.style.position = 'fixed';
+                modal.style.top = '10%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translateX(-50%)';
+                modal.style.background = '#fff';
+                modal.style.border = '2px solid #444';
+                modal.style.borderRadius = '8px';
+                modal.style.zIndex = 9999;
+                modal.style.padding = '20px';
+                modal.innerHTML = '<button onclick="document.getElementById(\'plotly-modal\').remove()">Close</button><div id="plotly-chart" style="width:600px;height:400px;"></div>';
+                document.body.appendChild(modal);
+            }
+            // Fetch Observations
+            fetch(`${apiUrl}/Datastreams(${datastreamId})/Observations?$top=100&$orderby=phenomenonTime asc`)
+                .then(response => response.json())
+                .then(data => {
+                    const x = [];
+                    const y = [];
+                    data.value.forEach(obs => {
+                        x.push(obs.phenomenonTime);
+                        y.push(obs.result);
+                    });
+                    Plotly.newPlot('plotly-chart', [{
+                        x: x,
+                        y: y,
+                        type: 'scatter',
+                        name: observedProperty
+                    }], {
+                        title: `Plot for ${observedProperty}`,
+                        xaxis: { title: 'Time' },
+                        yaxis: { title: 'Value' }
+                    }, {responsive: true});
+                });
+        }
 
         // Using a custom SVG icon as content
         var control = L.control.zoomBox({ addToZoomControl: true, modal: true });
